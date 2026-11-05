@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi-app
+  namespace: cicd-demo
+  labels:
+    app: fastapi-app
+
+spec:
+  replicas: 2
+
+  selector:
+    matchLabels:
+      app: fastapi-app
+
+  template:
+    metadata:
+      labels:
+        app: fastapi-app
+
+    spec:
+      containers:
+        - name: fastapi
+          image: jenkins-kubernetes-cicd:1.0
+          imagePullPolicy: Never
+
+          ports:
+            - containerPort: 8000
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
