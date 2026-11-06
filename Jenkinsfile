@@ -96,33 +96,32 @@ pipeline {
 
                     echo "Deploying image: ${IMAGE}"
 
-                    kubectl set image deployment/fastapi-app \
-                        fastapi=${IMAGE} \
-                        -n cicd-demo
+                    kubectl apply -f k8s/namespace.yaml
 
-                    echo "Waiting for Kubernetes rollout..."
+                    TEMP_MANIFEST=$(mktemp)
+                    trap 'rm -f "${TEMP_MANIFEST}"' EXIT
+
+                    sed "s|image: prithvimistral/jenkins-kubernetes-cicd:latest|image: ${IMAGE}|" \
+                        k8s/deployment.yaml > "${TEMP_MANIFEST}"
+
+                    kubectl apply -n cicd-demo -f "${TEMP_MANIFEST}"
+                    kubectl apply -n cicd-demo -f k8s/service.yaml
 
                     kubectl rollout status deployment/fastapi-app \
-                        -n cicd-demo \
-                        --timeout=180s
+                        -n cicd-demo --timeout=180s
 
-                    echo "Checking deployment..."
-
-                    kubectl get deployment fastapi-app \
-                        -n cicd-demo -o wide
-
+                    kubectl get deployment fastapi-app -n cicd-demo -o wide
                     kubectl get pods -n cicd-demo
+                    kubectl get service -n cicd-demo
 
                     echo "Testing application health..."
-
                     for i in $(seq 1 10); do
-                        if curl --fail --silent \
+                        if curl --fail --silent --show-error \
                             http://192.168.49.2:30080/health; then
                             echo
                             echo "Kubernetes health check passed!"
                             exit 0
                         fi
-
                         echo "Waiting for application..."
                         sleep 5
                     done
