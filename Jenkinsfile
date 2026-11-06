@@ -81,6 +81,58 @@ pipeline {
         }
 
 
+
+
+
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                echo 'Deploying application to Kubernetes...'
+
+                sh '''
+                    set -e
+
+                    IMAGE="prithvimistral/jenkins-kubernetes-cicd:${BUILD_NUMBER}"
+
+                    echo "Deploying image: ${IMAGE}"
+
+                    kubectl set image deployment/fastapi-app \
+                        fastapi=${IMAGE} \
+                        -n cicd-demo
+
+                    echo "Waiting for Kubernetes rollout..."
+
+                    kubectl rollout status deployment/fastapi-app \
+                        -n cicd-demo \
+                        --timeout=180s
+
+                    echo "Checking deployment..."
+
+                    kubectl get deployment fastapi-app \
+                        -n cicd-demo -o wide
+
+                    kubectl get pods -n cicd-demo
+
+                    echo "Testing application health..."
+
+                    for i in $(seq 1 10); do
+                        if curl --fail --silent \
+                            http://192.168.49.2:30080/health; then
+                            echo
+                            echo "Kubernetes health check passed!"
+                            exit 0
+                        fi
+
+                        echo "Waiting for application..."
+                        sleep 5
+                    done
+
+                    echo "Kubernetes health check failed!"
+                    exit 1
+                '''
+            }
+        }
+
     }
 
     post {
