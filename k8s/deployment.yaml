@@ -21,8 +21,8 @@ spec:
     spec:
       containers:
         - name: fastapi
-          image: jenkins-kubernetes-cicd:1.0
-          imagePullPolicy: Never
+          image: prithvimistral/jenkins-kubernetes-cicd:latest
+          imagePullPolicy: IfNotPresent
 
           ports:
             - containerPort: 8000
