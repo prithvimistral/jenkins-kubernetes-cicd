@@ -40,6 +40,22 @@ pipeline {
                 '''
             }
         }
+
+
+        stage('Build Docker Image') {
+            steps {
+                echo 'Building Docker image...'
+
+                sh '''
+                    docker build \
+                      -t prithvimistral/jenkins-kubernetes-cicd:${BUILD_NUMBER} \
+                      -t prithvimistral/jenkins-kubernetes-cicd:latest .
+                '''
+            }
+        }
+
+
+
     }
 
     post {
